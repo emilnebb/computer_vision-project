@@ -9,7 +9,7 @@
 
 # Directories
 .cache/
-logs/
+# logs/
 
 .vscode
 __pycache__
