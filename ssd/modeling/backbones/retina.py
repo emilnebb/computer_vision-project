@@ -68,12 +68,12 @@ class RetinaNet(torch.nn.Module):
         # So we now ignore advise from the paper and just use levels l 1-5
 
         x_fpn = OrderedDict()
-        x_fpn['level_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
-        x_fpn['level_3'] = self.transform_stride_2(x_fpn['level_2']) # torch.Size([1, 256, 16, 128])
-        x_fpn['level_4'] = self.transform_stride_2(x_fpn['level_3']) # torch.Size([1, 256, 8, 64])
-        x_fpn['level_5'] = self.transform_stride_2(x_fpn['level_4']) # torch.Size([1, 256, 4, 32])
-        x_fpn['level_6'] = self.transform_stride_2(x_fpn['level_5']) # torch.Size([1, 256, 2, 16])
-        x_fpn['level_7'] = self.transform_stride_2(x_fpn['level_6']) # torch.Size([1, 256, 1, 8])
+        x_fpn['P_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
+        x_fpn['P_3'] = self.transform_stride_2(x_fpn['level_2']) # torch.Size([1, 256, 16, 128])
+        x_fpn['P_4'] = self.transform_stride_2(x_fpn['level_3']) # torch.Size([1, 256, 8, 64])
+        x_fpn['P_5'] = self.transform_stride_2(x_fpn['level_4']) # torch.Size([1, 256, 4, 32])
+        x_fpn['P_6'] = self.transform_stride_2(x_fpn['level_5']) # torch.Size([1, 256, 2, 16])
+        x_fpn['P_7'] = self.transform_stride_2(x_fpn['level_6']) # torch.Size([1, 256, 1, 8])
 
         outputs = self.fpn(x_fpn).values()
 
