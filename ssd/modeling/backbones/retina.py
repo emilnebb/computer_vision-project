@@ -53,27 +53,13 @@ class RetinaNet(torch.nn.Module):
 
         """
 
-        # input x is of size torch.Size([1, 3, 128, 1024])
-        # we now need to create a pyramid with P_l levels 3 - 7
-        # each level l idicates 2^l resolution lower than input
-        # this would result in in the following resolutions:
-        # torch.Size([1, 256, 16, 128])
-        # torch.Size([1, 256, 8, 64])
-        # torch.Size([1, 256, 4, 32]) -> torch.Size([1, 3, 4, 32])
-        # torch.Size([1, 256, 2, 16])
-        # torch.Size([1, 256, 1, 8])
-        # TODO: BUT layer_5 dims will be too small:
-        # ValueError: Expected more than 1 value per channel when training, got input size torch.Size([1, 1024, 1, 1])
-        #
-        # So we now ignore advise from the paper and just use levels l 1-5
-
         x_fpn = OrderedDict()
         x_fpn['P_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
-        x_fpn['P_3'] = self.transform_stride_2(x_fpn['level_2']) # torch.Size([1, 256, 16, 128])
-        x_fpn['P_4'] = self.transform_stride_2(x_fpn['level_3']) # torch.Size([1, 256, 8, 64])
-        x_fpn['P_5'] = self.transform_stride_2(x_fpn['level_4']) # torch.Size([1, 256, 4, 32])
-        x_fpn['P_6'] = self.transform_stride_2(x_fpn['level_5']) # torch.Size([1, 256, 2, 16])
-        x_fpn['P_7'] = self.transform_stride_2(x_fpn['level_6']) # torch.Size([1, 256, 1, 8])
+        x_fpn['P_3'] = self.transform_stride_2(x_fpn['P_2']) # torch.Size([1, 256, 16, 128])
+        x_fpn['P_4'] = self.transform_stride_2(x_fpn['P_3']) # torch.Size([1, 256, 8, 64])
+        x_fpn['P_5'] = self.transform_stride_2(x_fpn['P_4']) # torch.Size([1, 256, 4, 32])
+        x_fpn['P_6'] = self.transform_stride_2(x_fpn['P_5']) # torch.Size([1, 256, 2, 16])
+        x_fpn['P_7'] = self.transform_stride_2(x_fpn['P_6']) # torch.Size([1, 256, 1, 8])
 
         outputs = self.fpn(x_fpn).values()
 
