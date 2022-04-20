@@ -19,75 +19,40 @@ class RetinaNet(torch.nn.Module):
                  image_channels: int,
                  output_feature_sizes: List[Tuple[int]]):
         super().__init__()
+
         self.out_channels = output_channels
         self.output_feature_shape = output_feature_sizes
 
-        # this transform layer brings the input to the right shape for the different levels of the fpn
-        self.transform_stride_8 = nn.Conv2d(
-            in_channels=image_channels,
-            out_channels=256,
-            kernel_size=1,
-            stride=8,
-            padding=0
-        )
 
-        self.transform_stride_2 = nn.Conv2d(
-            in_channels=256,
-            out_channels=256,
-            kernel_size=1,
-            stride=2,
-            padding=0
-        )
+        # remove the 3 last layers of resnet
+        self.resnet = torchvision.models.resnet18(pretrained=True, progress=True)
 
-        self.transform_out_channels_3 = nn.Conv2d(
-            in_channels=256,
-            out_channels=3,
-            kernel_size=1,
-            stride=1,
-            padding=0
-        )
+        # initialize fpn
+        self.fpn = torchvision.ops.FeaturePyramidNetwork(
+            in_channels_list=[64, 128, 256, 512, 512, 256], 
+            out_channels=256)
 
-        nn.ConvTranspose2d
-        #FPN
-        self.fpn = torchvision.ops.FeaturePyramidNetwork([256]*5, 256)
-
-
-        #remove 2 last layers of resnet
-        self.resnet_without_classifier = nn.Sequential(
-            *list(
-                torchvision.models.resnet18(pretrained=True, progress=True)
-                .children()
-            )[:-3]
-        )
-
-
-        #ONLY USE SELECTED LAYERS OF THE RESNET
-        print(self.resnet_without_classifier)
-
-        #self.resnet.conv1.in_channels = image_channels
-        #self.resnet.conv1.out_channels = 256
-
-        #self.resnet.conv1.kernel_size = (1, 1)
-        #self.resnet.conv1.padding = (0,0)
-
-
-        self.transpose_convolution = nn.ConvTranspose2d(
-            in_channels=512, 
-            out_channels=256, 
-            kernel_size=1, 
-            #stride=1,
-            padding=1,
-            #dilation=???
-        )
-
-        self.basic_conv = nn.Conv2d(
-            in_channels=256,
-            out_channels=256,
+        # Focal Loss footnotes
+        # P6 = 3×3 stride-2 conv on C5
+        self.transform_c5_to_p6 = nn.Conv2d(
+            in_channels=512,
+            out_channels=512,
             kernel_size=3,
             stride=2,
-            padding=0
+            padding=1
         )
 
+        # P7 is computed by applying ReLU followed by a 3×3 stride-2 conv on P6
+        self.transform_p6_to_p7 = nn.Sequential(
+            nn.ReLU(),
+            nn.Conv2d(
+                in_channels=512,
+                out_channels=256,
+                kernel_size=3,
+                stride=2,
+                padding=1 # not sure if this should be..
+            ),
+        )
 
 
     def forward(self, x):
@@ -104,87 +69,32 @@ class RetinaNet(torch.nn.Module):
         These minor modifications improve speed while maintaining accuracy.
         """
 
+        print(f"input shape={x.shape}")
 
-        """
-        self.resnet.conv1.in_channels = 64
-        self.resnet.eval()
-        #x = self.resnet(x)
-        #print(x.shape)
-        print("Conv 1:")
+        # manually apply the first four stages of ResNet
+        x = self.resnet.conv1(x)
+        x = self.resnet.bn1(x)
+        x = self.resnet.relu(x)
+        x = self.resnet.maxpool(x)
 
-        self.resnet.conv1.in_channels = 3
-        self.resnet.conv1.out_channels = 256
-        #self.resnet.conv1.padding = (0, 0)
-        self.resnet.conv1.kernel_size = (1, 1)
-        self.resnet.conv1.stride = (2, 2)
-        y = self.resnet.conv1(x)
-        print(y.shape)
-
-        print("Layer 1:")
-        y = self.resnet.layer1(y) #keeps the same shape
-        print(y.shape)
-        print("Layer 1:") # keeps the same shape
-        print(self.resnet.layer1.children())
-        print(y.shape)
-        print("Layer 2:")
-        y = self.resnet.layer2(y)
-        print(y.shape)
-        print("Layer 3:")
-        y = self.resnet.layer3(y)
-        print(y.shape)
-        print("Layer 3:")
-        y = self.resnet.layer3[1](y)
-        print(y.shape)
-        """
-
-
-        """
-        self.x_fpn['P_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
-        self.x_fpn['P_3'] = self.transform_stride_2(self.x_fpn['P_2']) # torch.Size([1, 256, 16, 128])
-        self.x_fpn['P_4'] = self.transform_stride_2(self.x_fpn['P_3']) # torch.Size([1, 256, 8, 64])
-        self.x_fpn['P_5'] = self.transform_stride_2(self.x_fpn['P_4']) # torch.Size([1, 256, 4, 32])
-        self.x_fpn['P_6'] = self.transform_stride_2(self.x_fpn['P_5']) # torch.Size([1, 256, 2, 16])
-        self.x_fpn['P_7'] = self.transform_stride_2(self.x_fpn['P_6']) # torch.Size([1, 256, 1, 8])
-        """
-        print(x.shape)
-        #x = self.resnet_without_classifier(x)
-        #print(x.shape)
-
+        print(f"shape after init={x.shape}")
 
         x_fpn = OrderedDict()
-        # x_fpn['P_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
-        x_fpn['P_3'] = self.resnet_without_classifier(x)  # torch.Size([1, 256, 16, 128])
-        x_fpn['P_4'] = x_fpn['P_3']  # torch.Size([1, 256, 8, 64])
-        x_fpn['P_5'] = (x_fpn['P_4'])  # torch.Size([1, 256, 4, 32])
-        x_fpn['P_6'] = self.basic_conv(x_fpn['P_5'])  # torch.Size([1, 256, 2, 16])
-        x_fpn['P_7'] = self.basic_conv((x_fpn['P_6']))  # torch.Size([1, 256, 1, 8])
+        x_fpn['P_2'] = self.resnet.layer1(x)
+        x_fpn['P_3'] = self.resnet.layer2(x_fpn['P_2']) # should be torch.Size([1, 256, 16, 128])
+        x_fpn['P_4'] = self.resnet.layer3(x_fpn['P_3']) # should be torch.Size([1, 256, 8, 64])
+        x_fpn['P_5'] = self.resnet.layer4(x_fpn['P_4']) # should be torch.Size([1, 256, 4, 32])
+
+        x_fpn['P_6'] = self.transform_c5_to_p6(x_fpn['P_5']) # should be torch.Size([1, 256, 2, 16])
+        x_fpn['P_7'] = self.transform_p6_to_p7(x_fpn['P_6']) # should be torch.Size([1, 256, 1, 8])
+
+        print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
+
 
         outputs = self.fpn(x_fpn)
-        print("------")
-        print("Outputs from FPN:")
-        print([(k, v.shape) for k, v in outputs.items()])
-        print("------")
-        # outputs = self.fpn(x_fpn).values()
+        print(f"shapes of fpn outputs={[(k, v.shape) for k, v in outputs.items()]}")
+        outputs = outputs.values()
 
-        # print(outputs_fpn.values().next().shape)
-        # outputs = [self.transform_out_channels_3(output) for output in outputs]
-        print(f"input={x.shape}")
-
-        # # set model in evaluation mode
-        # self.resnet.eval()
-
-        # outputs = [self.resnet(output) for output in outputs]
-
-        #outputs = self.resnet_without_classifier(x)
-        #print(f"output resnet={outputs.shape}")
-
-        # use "transposed convolution" to increase the output dimension of ResNet to fit our req. dims
-        #outputs = self.transpose_convolution(outputs)
-        #print(f"output transpose={outputs.shape}")
-
-        #summary(self.resnet_without_classifier,input_size=(3, 128, 1024))
-
-        exit(0)
 
         # expected out DIMs:
         # IDX=0 Expected shape: (256, 32, 256)
@@ -193,7 +103,6 @@ class RetinaNet(torch.nn.Module):
         # IDX=3 Expected shape: (256, 4, 32)
         # IDX=4 Expected shape: (256, 2, 16)
         # IDX=5 Expected shape: (256, 1, 8)
-
 
         for idx, feature in enumerate(outputs):
             out_channel = self.out_channels[idx]
@@ -204,3 +113,4 @@ class RetinaNet(torch.nn.Module):
         assert len(outputs) == len(self.output_feature_shape),\
             f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(outputs)}"
         return tuple(outputs)
+
