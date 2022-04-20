@@ -50,24 +50,24 @@ class RetinaNet(torch.nn.Module):
         nn.ConvTranspose2d
         #FPN
         self.fpn = torchvision.ops.FeaturePyramidNetwork([256]*5, 256)
-        self.x_fpn = OrderedDict()
+
 
         #remove 2 last layers of resnet
         self.resnet_without_classifier = nn.Sequential(
             *list(
                 torchvision.models.resnet18(pretrained=True, progress=True)
                 .children()
-            )[:-2]
+            )[:-3]
         )
 
 
         #ONLY USE SELECTED LAYERS OF THE RESNET
-        self.resnet.conv1.stride = (4, 4)
-        print(self.resnet)
+        print(self.resnet_without_classifier)
+
         #self.resnet.conv1.in_channels = image_channels
         #self.resnet.conv1.out_channels = 256
 
-        self.resnet.conv1.kernel_size = (1, 1)
+        #self.resnet.conv1.kernel_size = (1, 1)
         #self.resnet.conv1.padding = (0,0)
 
 
@@ -79,6 +79,15 @@ class RetinaNet(torch.nn.Module):
             padding=1,
             #dilation=???
         )
+
+        self.basic_conv = nn.Conv2d(
+            in_channels=256,
+            out_channels=256,
+            kernel_size=3,
+            stride=2,
+            padding=0
+        )
+
 
 
     def forward(self, x):
@@ -94,7 +103,9 @@ class RetinaNet(torch.nn.Module):
         and (3) we include P7 to improve large object detection.
         These minor modifications improve speed while maintaining accuracy.
         """
-        print(x.shape)
+
+
+        """
         self.resnet.conv1.in_channels = 64
         self.resnet.eval()
         #x = self.resnet(x)
@@ -124,6 +135,8 @@ class RetinaNet(torch.nn.Module):
         print("Layer 3:")
         y = self.resnet.layer3[1](y)
         print(y.shape)
+        """
+
 
         """
         self.x_fpn['P_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
@@ -133,15 +146,24 @@ class RetinaNet(torch.nn.Module):
         self.x_fpn['P_6'] = self.transform_stride_2(self.x_fpn['P_5']) # torch.Size([1, 256, 2, 16])
         self.x_fpn['P_7'] = self.transform_stride_2(self.x_fpn['P_6']) # torch.Size([1, 256, 1, 8])
         """
+        print(x.shape)
+        #x = self.resnet_without_classifier(x)
+        #print(x.shape)
 
+
+        x_fpn = OrderedDict()
         # x_fpn['P_2'] = self.transform_stride_4(x) # torch.Size([1, 256, 32, 256])
-        x_fpn['P_3'] = self.transform_stride_8(x)  # torch.Size([1, 256, 16, 128])
-        x_fpn['P_4'] = self.transform_stride_2(x_fpn['P_3'])  # torch.Size([1, 256, 8, 64])
-        x_fpn['P_5'] = self.transform_stride_2(x_fpn['P_4'])  # torch.Size([1, 256, 4, 32])
-        x_fpn['P_6'] = self.transform_stride_2(x_fpn['P_5'])  # torch.Size([1, 256, 2, 16])
-        x_fpn['P_7'] = self.transform_stride_2(x_fpn['P_6'])  # torch.Size([1, 256, 1, 8])
+        x_fpn['P_3'] = self.resnet_without_classifier(x)  # torch.Size([1, 256, 16, 128])
+        x_fpn['P_4'] = x_fpn['P_3']  # torch.Size([1, 256, 8, 64])
+        x_fpn['P_5'] = (x_fpn['P_4'])  # torch.Size([1, 256, 4, 32])
+        x_fpn['P_6'] = self.basic_conv(x_fpn['P_5'])  # torch.Size([1, 256, 2, 16])
+        x_fpn['P_7'] = self.basic_conv((x_fpn['P_6']))  # torch.Size([1, 256, 1, 8])
 
-        outputs = self.fpn(self.x_fpn).values()
+        outputs = self.fpn(x_fpn)
+        print("------")
+        print("Outputs from FPN:")
+        print([(k, v.shape) for k, v in outputs.items()])
+        print("------")
         # outputs = self.fpn(x_fpn).values()
 
         # print(outputs_fpn.values().next().shape)
@@ -153,14 +175,14 @@ class RetinaNet(torch.nn.Module):
 
         # outputs = [self.resnet(output) for output in outputs]
 
-        outputs = self.resnet_without_classifier(x)
-        print(f"output resnet={outputs.shape}")
+        #outputs = self.resnet_without_classifier(x)
+        #print(f"output resnet={outputs.shape}")
 
         # use "transposed convolution" to increase the output dimension of ResNet to fit our req. dims
-        outputs = self.transpose_convolution(outputs)
-        print(f"output transpose={outputs.shape}")
+        #outputs = self.transpose_convolution(outputs)
+        #print(f"output transpose={outputs.shape}")
 
-        summary(self.resnet_without_classifier,input_size=(3, 128, 1024))
+        #summary(self.resnet_without_classifier,input_size=(3, 128, 1024))
 
         exit(0)
 
