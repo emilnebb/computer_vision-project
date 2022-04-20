@@ -77,7 +77,7 @@ class RetinaNet(torch.nn.Module):
         x = self.resnet.relu(x)
         x = self.resnet.maxpool(x)
 
-        print(f"shape after init={x.shape}")
+        # print(f"shape after init={x.shape}")
 
         x_fpn = OrderedDict()
         x_fpn['P_2'] = self.resnet.layer1(x)
@@ -88,11 +88,11 @@ class RetinaNet(torch.nn.Module):
         x_fpn['P_6'] = self.transform_c5_to_p6(x_fpn['P_5']) # should be torch.Size([1, 256, 2, 16])
         x_fpn['P_7'] = self.transform_p6_to_p7(x_fpn['P_6']) # should be torch.Size([1, 256, 1, 8])
 
-        print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
+        # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
 
         outputs = self.fpn(x_fpn)
-        print(f"shapes of fpn outputs={[(k, v.shape) for k, v in outputs.items()]}")
+        # print(f"shapes of fpn outputs={[(k, v.shape) for k, v in outputs.items()]}")
         outputs = outputs.values()
 
 
