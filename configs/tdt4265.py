@@ -9,6 +9,11 @@ from ssd.data.transforms import (
 from .ssd300 import train, optimizer, schedulers, model, data_train, data_val, loss_objective
 from .utils import get_dataset_dir
 
+##############################################################
+# configuration for using SSD on the TDT4265 project dataset #
+##############################################################
+
+
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)
 train.image_channels = 3

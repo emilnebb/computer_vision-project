@@ -54,7 +54,6 @@ class RetinaNet(torch.nn.Module):
             ),
         )
 
-
     def forward(self, x):
         """
         From paper:
@@ -90,10 +89,10 @@ class RetinaNet(torch.nn.Module):
 
         # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
-
-        outputs = self.fpn(x_fpn)
+        out_features = self.fpn(x_fpn)
         # print(f"shapes of fpn outputs={[(k, v.shape) for k, v in outputs.items()]}")
-        outputs = outputs.values()
+        out_features = out_features.values()
+
 
 
         # expected out DIMs:
@@ -104,13 +103,13 @@ class RetinaNet(torch.nn.Module):
         # IDX=4 Expected shape: (256, 2, 16)
         # IDX=5 Expected shape: (256, 1, 8)
 
-        for idx, feature in enumerate(outputs):
+        for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
             expected_shape = (out_channel, h, w)
             assert feature.shape[1:] == expected_shape, \
                 f"Expected shape: {expected_shape}, got: {feature.shape[1:]} at output IDX: {idx}"
-        assert len(outputs) == len(self.output_feature_shape),\
-            f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(outputs)}"
-        return tuple(outputs)
+        assert len(out_features) == len(self.output_feature_shape),\
+            f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features)}"
+        return tuple(out_features)
 
