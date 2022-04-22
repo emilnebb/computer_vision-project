@@ -2,7 +2,7 @@
 import torchvision
 from ssd.data import TDT4265Dataset
 from ssd.modeling import backbones, AnchorBoxes
-from ssd.modeling.ssd_multibox_focal_loss import SSDMultiboxFocalLoss
+from ssd.modeling.focal_loss import FocalLoss
 from tops.config import LazyCall as L
 from ssd.data.transforms import (
     ToTensor, RandomHorizontalFlip, RandomSampleCrop, Normalize, Resize,
@@ -26,7 +26,9 @@ backbone = L(backbones.RetinaNet)(
     output_feature_sizes="${anchors.feature_sizes}"
 )
 
-loss_objective = L(SSDMultiboxFocalLoss)(anchors="${anchors}")
+#loss_objective = L(FocalLoss)(anchors="${anchors}",
+#                              alpha=[0.01, *[1 for i in range(model.num_classes-1)]],
+#                              gamma=2)
 
 anchors = L(AnchorBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],

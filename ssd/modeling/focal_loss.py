@@ -29,14 +29,14 @@ def hard_negative_mining(loss, labels, neg_pos_ratio):
 # def focal_loss(loss, labels, alpha):
 #     return -alpha * (1-)
 
-class SSDMultiboxFocalLoss(nn.Module):
+class FocalLoss(nn.Module):
     """
         Implements the loss as the sum of the followings:
         1. Confidence Loss: All labels, with hard negative mining
         2. Localization Loss: Only on positive labels
         Suppose input dboxes has the shape 8732x4
     """
-    def __init__(self, anchors):
+    def __init__(self, anchors, alpha, gamma):
         super().__init__()
         self.scale_xy = 1.0/anchors.scale_xy
         self.scale_wh = 1.0/anchors.scale_wh
@@ -44,7 +44,8 @@ class SSDMultiboxFocalLoss(nn.Module):
         self.sl1_loss = nn.SmoothL1Loss(reduction='none')
         self.anchors = nn.Parameter(anchors(order="xywh").transpose(0, 1).unsqueeze(dim = 0),
             requires_grad=False)
-
+        self.alpha = alpha
+        self.gamma = gamma
 
     def _loc_vec(self, loc):
         """
@@ -53,6 +54,18 @@ class SSDMultiboxFocalLoss(nn.Module):
         gxy = self.scale_xy*(loc[:, :2, :] - self.anchors[:, :2, :])/self.anchors[:, 2:, ]
         gwh = self.scale_wh*(loc[:, 2:, :]/self.anchors[:, 2:, :]).log()
         return torch.cat((gxy, gwh), dim=1).contiguous()
+
+    def focal_loss(self, p_k, y_k):
+        """
+        p_k = softmax output for class k
+        y = ground truth one-hot encoded
+        """
+        loss = 0
+        print(f"softmax output shape={p_k.shape}")
+        print(f"Ground truth shape={y_k.shape}")
+        print(f"Alpha shape={len(self.alpha)}")
+        loss = - ((1-p_k)**self.gamma*y_k*math.log(p_k))
+        return loss
     
     def forward(self,
             bbox_delta: torch.FloatTensor, confs: torch.FloatTensor,
@@ -66,8 +79,12 @@ class SSDMultiboxFocalLoss(nn.Module):
         """
         gt_bbox = gt_bbox.transpose(1, 2).contiguous() # reshape to [batch_size, 4, num_anchors]
         with torch.no_grad():
-            to_log = - F.log_softmax(confs, dim=1)[:, 0] # i think this should be replaced with focal loss
-            #mask = hard_negative_mining(to_log, gt_labels, 3.0)
+            #torch.sum() kan brukes
+
+            #Remember to apply softmax (or log_softmax) to confs:
+            to_log = - F.log_softmax(confs, dim=1)[:, 0]
+            mask = self.focal_loss(to_log, gt_labels)
+            print(f"mask shape={mask.shape}")
         classification_loss = F.cross_entropy(confs, gt_labels, reduction="none")
         #classification_loss = classification_loss[mask].sum()
 
