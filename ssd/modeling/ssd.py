@@ -1,3 +1,4 @@
+from ast import Tuple
 import torch
 import torch.nn as nn
 from .anchor_encoder import AnchorEncoder
@@ -24,8 +25,19 @@ class SSD300(nn.Module):
 
         # Initialize output heads that are applied to each feature map from the backbone.
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-            self.regression_heads.append(nn.Conv2d(out_ch, n_boxes * 4, kernel_size=3, padding=1))
-            self.classification_heads.append(nn.Conv2d(out_ch, n_boxes * self.num_classes, kernel_size=3, padding=1))
+
+            # in task 2.3 we will replace these heads with deeper convolutional nets
+            self.regression_heads.append(nn.Conv2d(
+                in_channels=out_ch, 
+                out_channels=n_boxes * 4, # is 4 the coordinates?!
+                kernel_size=3, 
+                padding=1
+            ))
+            self.classification_heads.append(nn.Conv2d(
+                in_channels=out_ch, out_channels=n_boxes * self.num_classes, 
+                kernel_size=3, 
+                padding=1
+            ))
 
         self.regression_heads = nn.ModuleList(self.regression_heads)
         self.classification_heads = nn.ModuleList(self.classification_heads)
@@ -33,21 +45,31 @@ class SSD300(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """
+        initializes weights of the heads
+        """
         layers = [*self.regression_heads, *self.classification_heads]
         for layer in layers:
             for param in layer.parameters():
                 if param.dim() > 1: nn.init.xavier_uniform_(param)
 
-    def regress_boxes(self, features):
+    def regress_boxes(self, features: Tuple):
         locations = []
         confidences = []
+
+        # iterate over all features (each returned by different FPN levels)
+        # for each "resolution" we use individual regression- and classification heads
+
         for idx, x in enumerate(features):
-            bbox_delta = self.regression_heads[idx](x).view(x.shape[0], 4, -1)
+            # print(f"feature shape={x.shape}")
+            bbox_delta = self.regression_heads[idx](x).view(x.shape[0], 4, -1) # forward feature map through head and reshape it to : it's delta because its the offset fromt the default box. xmin_d, xmax_d, ymin_d, ymax_d
+            # print(f"bbox_delta={bbox_delta.shape}")
             bbox_conf = self.classification_heads[idx](x).view(x.shape[0], self.num_classes, -1)
             locations.append(bbox_delta)
             confidences.append(bbox_conf)
-        bbox_delta = torch.cat(locations, 2).contiguous()
-        confidences = torch.cat(confidences, 2).contiguous()
+
+        bbox_delta = torch.cat(locations, 2).contiguous() # N x 4 x num anchors
+        confidences = torch.cat(confidences, 2).contiguous() # N x num classes x num anchors
         return bbox_delta, confidences
 
     
@@ -58,6 +80,15 @@ class SSD300(nn.Module):
         if not self.training:
             return self.forward_test(img, **kwargs)
         features = self.feature_extractor(img)
+
+        # as defined in the cfg.anchors.feature_sizes
+        # features[0]: torch.Size([1, 256, 32, 256])
+        # features[1]: torch.Size([1, 256, 16, 128])
+        # features[2]: torch.Size([1, 256, 8, 64])
+        # features[3]: torch.Size([1, 256, 4, 32])
+        # features[4]: torch.Size([1, 256, 2, 16])
+        # features[5]: torch.Size([1, 256, 1, 8])
+
         return self.regress_boxes(features)
     
     def forward_test(self,
