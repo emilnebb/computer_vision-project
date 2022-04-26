@@ -2,6 +2,7 @@
 import torchvision
 from ssd.data import TDT4265Dataset
 from ssd.modeling import backbones, AnchorBoxes
+from ssd.modeling.retinanet import RetinaNet
 from ssd.modeling.focal_loss import FocalLoss
 from tops.config import LazyCall as L
 from ssd.data.transforms import (
@@ -26,9 +27,7 @@ backbone = L(backbones.RetinaNet)(
     output_feature_sizes="${anchors.feature_sizes}"
 )
 
-#loss_objective = L(FocalLoss)(anchors="${anchors}",
-#                              alpha=[0.01, *[1 for i in range(model.num_classes-1)]],
-#                              gamma=2)
+loss_objective = L(FocalLoss)(anchors="${anchors}", alpha=[0.01, *[1 for i in range(model.num_classes-1)]], gamma=2)
 
 anchors = L(AnchorBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
@@ -44,6 +43,16 @@ anchors = L(AnchorBoxes)(
     scale_center_variance=0.1,
     scale_size_variance=0.2
 )
+
+
+model = L(RetinaNet)(
+    feature_extractor="${backbone}",
+    anchors="${anchors}",
+    loss_objective="${loss_objective}",
+    num_classes=8 + 1,  # Add 1 for background
+    anchor_prob_initialization = False
+)
+
 
 train_cpu_transform = L(torchvision.transforms.Compose)(transforms=[
     L(RandomSampleCrop)(),
