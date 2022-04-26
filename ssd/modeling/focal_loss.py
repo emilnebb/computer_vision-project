@@ -62,9 +62,6 @@ class FocalLoss(nn.Module):
         return: torch.Size([32, 65440])
         """
         loss = torch.zeros_like(y_k)
-        print(f"softmax output shape={p_k.shape}")
-        print(f"Ground truth shape={y_k.shape}")
-        print(f"Alpha ={(self.alpha)}")
 
         #Iterate over the classes only
         for i in range(len(self.alpha)):
@@ -72,7 +69,6 @@ class FocalLoss(nn.Module):
             second = y_k.long()*torch.log(p_k[:, i, :])
             loss += (first*second).long()
 
-        print(f"Loss shape ={(loss.shape)}")
         return loss
     
     def forward(self,
@@ -87,15 +83,10 @@ class FocalLoss(nn.Module):
         """
         gt_bbox = gt_bbox.transpose(1, 2).contiguous() # reshape to [batch_size, 4, num_anchors]
         with torch.no_grad():
-            print(confs.shape)
             #Remember to apply softmax (or log_softmax) to confs:
             to_log = - F.log_softmax(confs, dim=1)
             mask = self.focal_loss(to_log, gt_labels)
-            #Mask shape = torch.Size([32, 65440])
-            print(f"mask shape={mask.shape}")
-        #classification_loss = F.cross_entropy(confs, gt_labels, reduction="none")
         classification_loss = torch.sum(mask)
-        print(f"classification loss={classification_loss}")
 
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
