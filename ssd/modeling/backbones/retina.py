@@ -106,30 +106,35 @@ class RetinaNet(torch.nn.Module):
 
         # print(f"shape after init={x.shape}")
 
-        # x_fpn = OrderedDict()
-        # x_fpn['P_2'] = stage_1
-        # x_fpn['P_3'] = stage_2 
-        # x_fpn['P_4'] = stage_3 
-        # x_fpn['P_5'] = stage_4
+        x_fpn = OrderedDict()
+        x_fpn['P_2'] = stage_1
+        x_fpn['P_3'] = stage_2 
+        x_fpn['P_4'] = stage_3 
+        x_fpn['P_5'] = stage_4
 
-        # x_fpn['P_6'] = downsample_1
-        # x_fpn['P_7'] = downsample_2
+        x_fpn['P_6'] = downsample_1
+        x_fpn['P_7'] = downsample_2
 
         # # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
-        # out_features = self.fpn(x_fpn)
-        # # print(f"shapes of fpn outputs={[(k, v.shape) for k, v in outputs.items()]}")
-        # out_features = out_features.values()
+        out_features = self.fpn(x_fpn)
+        print(f"shapes of fpn outputs={[v.shape for v in out_features]}")
+
+        out_features_list = []
+
+        for k, v in out_features.items():
+            out_features_list.append(v)
 
 
-        out_features = [
-            self.transform_64_to_256_channels(stage_1),
-            self.transform_128_to_256_channels(stage_2),
-            stage_3,
-            self.transform_512_to_256_channels(stage_4),
-            self.transform_512_to_256_channels(downsample_1),
-            downsample_2
-        ]
+        # # when not using fpn
+        # out_features = [
+        #     self.transform_64_to_256_channels(stage_1),
+        #     self.transform_128_to_256_channels(stage_2),
+        #     stage_3,
+        #     self.transform_512_to_256_channels(stage_4),
+        #     self.transform_512_to_256_channels(downsample_1),
+        #     downsample_2
+        # ]
 
         # for out_feature in out_features:
         #     print(out_feature.shape)
@@ -143,13 +148,13 @@ class RetinaNet(torch.nn.Module):
         # IDX=4 Expected shape: (256, 2, 16)
         # IDX=5 Expected shape: (256, 1, 8)
 
-        for idx, feature in enumerate(out_features):
+        for idx, feature in enumerate(out_features_list):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
             expected_shape = (out_channel, h, w)
             assert feature.shape[1:] == expected_shape, \
                 f"Expected shape: {expected_shape}, got: {feature.shape[1:]} at output IDX: {idx}"
-        assert len(out_features) == len(self.output_feature_shape),\
-            f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features)}"
-        return tuple(out_features)
+        assert len(out_features_list) == len(self.output_feature_shape),\
+            f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features_list)}"
+        return tuple(out_features_list)
 
