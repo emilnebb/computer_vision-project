@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch
 import math
 import torch.nn.functional as F
+import tops
 
 
 class FocalLoss(nn.Module):
@@ -20,7 +21,7 @@ class FocalLoss(nn.Module):
         self.sl1_loss = nn.SmoothL1Loss(reduction='none')
         self.anchors = nn.Parameter(anchors(order="xywh").transpose(0, 1).unsqueeze(dim = 0),
             requires_grad=False)
-        self.alpha = torch.FloatTensor(alpha).view(1, -1, 1)
+        self.alpha = tops.to_cuda(torch.FloatTensor(alpha).view(1, -1, 1))
         self.gamma = gamma
 
     def _loc_vec(self, loc):
@@ -35,7 +36,7 @@ class FocalLoss(nn.Module):
         """
         p_k = softmax output for class k
         y = ground truth one-hot encoded
-        return: torch.Size([32, 65440])
+        return: float
         """
         y_k = torch.transpose(F.one_hot(y_k, self.alpha.shape[1]), 1, 2)
         loss = self.alpha*(1-p_k)**self.gamma*y_k*torch.log(p_k)
