@@ -5,7 +5,6 @@ from torch import nn
 import torchvision
 from torchsummary import summary
 
-
 # https://piazza.com/class/kyipdksfp9q1dn?cid=302
 
 class RetinaNet(torch.nn.Module):
@@ -117,28 +116,18 @@ class RetinaNet(torch.nn.Module):
 
         # # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
-        out_features = self.fpn(x_fpn)
-        print(f"shapes of fpn outputs={[v.shape for v in out_features]}")
+        #out_features = self.fpn(x_fpn).values()
+        # print(f"shapes of fpn outputs={list(out_features)}")
 
-        out_features_list = []
-
-        for k, v in out_features.items():
-            out_features_list.append(v)
-
-
-        # # when not using fpn
-        # out_features = [
-        #     self.transform_64_to_256_channels(stage_1),
-        #     self.transform_128_to_256_channels(stage_2),
-        #     stage_3,
-        #     self.transform_512_to_256_channels(stage_4),
-        #     self.transform_512_to_256_channels(downsample_1),
-        #     downsample_2
-        # ]
-
-        # for out_feature in out_features:
-        #     print(out_feature.shape)
-
+        # compose this list when we want to skip FPN
+        out_features = [
+            self.transform_64_to_256_channels(stage_1),
+            self.transform_128_to_256_channels(stage_2),
+            stage_3,
+            self.transform_512_to_256_channels(stage_4),
+            self.transform_512_to_256_channels(downsample_1),
+            downsample_2
+        ]
 
         # expected out DIMs:
         # IDX=0 Expected shape: (256, 32, 256)
@@ -148,13 +137,13 @@ class RetinaNet(torch.nn.Module):
         # IDX=4 Expected shape: (256, 2, 16)
         # IDX=5 Expected shape: (256, 1, 8)
 
-        for idx, feature in enumerate(out_features_list):
+        for idx, feature in enumerate(out_features):
             out_channel = self.out_channels[idx]
             h, w = self.output_feature_shape[idx]
             expected_shape = (out_channel, h, w)
             assert feature.shape[1:] == expected_shape, \
                 f"Expected shape: {expected_shape}, got: {feature.shape[1:]} at output IDX: {idx}"
-        assert len(out_features_list) == len(self.output_feature_shape),\
-            f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features_list)}"
-        return tuple(out_features_list)
+        assert len(out_features) == len(self.output_feature_shape),\
+            f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features)}"
+        return tuple(out_features)
 
