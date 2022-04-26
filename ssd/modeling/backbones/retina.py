@@ -5,7 +5,6 @@ from torch import nn
 import torchvision
 from torchsummary import summary
 
-
 # https://piazza.com/class/kyipdksfp9q1dn?cid=302
 
 class RetinaNet(torch.nn.Module):
@@ -54,6 +53,24 @@ class RetinaNet(torch.nn.Module):
             ),
         )
 
+        self.transform_64_to_256_channels = nn.Conv2d(
+            in_channels=64,
+            out_channels=256,
+            kernel_size=1
+        )
+
+        self.transform_128_to_256_channels = nn.Conv2d(
+            in_channels=128,
+            out_channels=256,
+            kernel_size=1
+        )
+
+        self.transform_512_to_256_channels = nn.Conv2d(
+            in_channels=512,
+            out_channels=256,
+            kernel_size=1
+        )
+
     def forward(self, x):
         """
         From paper:
@@ -76,24 +93,41 @@ class RetinaNet(torch.nn.Module):
         x = self.resnet.relu(x)
         x = self.resnet.maxpool(x)
 
+        # from here on we extract the next stages from resnet
+        stage_1 = self.resnet.layer1(x)       # should be torch.Size([1, 256, 32, 256])
+        stage_2 = self.resnet.layer2(stage_1) # should be torch.Size([1, 256, 16, 128])
+        stage_3 = self.resnet.layer3(stage_2) # should be torch.Size([1, 256, 8, 64])
+        stage_4 = self.resnet.layer4(stage_3) # should be torch.Size([1, 256, 4, 32])
+
+        # we use convolution to further sample down to the desired dimensions
+        downsample_1 = self.transform_c5_to_p6(stage_4)      # should be torch.Size([1, 256, 2, 16])
+        downsample_2 = self.transform_p6_to_p7(downsample_1) # should be torch.Size([1, 256, 1, 8])
+
         # print(f"shape after init={x.shape}")
 
         x_fpn = OrderedDict()
-        x_fpn['P_2'] = self.resnet.layer1(x)
-        x_fpn['P_3'] = self.resnet.layer2(x_fpn['P_2']) # should be torch.Size([1, 256, 16, 128])
-        x_fpn['P_4'] = self.resnet.layer3(x_fpn['P_3']) # should be torch.Size([1, 256, 8, 64])
-        x_fpn['P_5'] = self.resnet.layer4(x_fpn['P_4']) # should be torch.Size([1, 256, 4, 32])
+        x_fpn['P_2'] = stage_1
+        x_fpn['P_3'] = stage_2 
+        x_fpn['P_4'] = stage_3 
+        x_fpn['P_5'] = stage_4
 
-        x_fpn['P_6'] = self.transform_c5_to_p6(x_fpn['P_5']) # should be torch.Size([1, 256, 2, 16])
-        x_fpn['P_7'] = self.transform_p6_to_p7(x_fpn['P_6']) # should be torch.Size([1, 256, 1, 8])
+        x_fpn['P_6'] = downsample_1
+        x_fpn['P_7'] = downsample_2
 
-        # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
+        # # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
-        out_features = self.fpn(x_fpn)
-        # print(f"shapes of fpn outputs={[(k, v.shape) for k, v in outputs.items()]}")
-        out_features = out_features.values()
+        #out_features = self.fpn(x_fpn).values()
+        # print(f"shapes of fpn outputs={list(out_features)}")
 
-
+        # compose this list when we want to skip FPN
+        out_features = [
+            self.transform_64_to_256_channels(stage_1),
+            self.transform_128_to_256_channels(stage_2),
+            stage_3,
+            self.transform_512_to_256_channels(stage_4),
+            self.transform_512_to_256_channels(downsample_1),
+            downsample_2
+        ]
 
         # expected out DIMs:
         # IDX=0 Expected shape: (256, 32, 256)
