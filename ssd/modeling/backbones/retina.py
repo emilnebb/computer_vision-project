@@ -131,8 +131,8 @@ class RetinaNet(torch.nn.Module):
             downsample_2
         ]
 
-        for out_feature in out_features:
-            print(out_feature.shape)
+        # for out_feature in out_features:
+        #     print(out_feature.shape)
 
 
         # expected out DIMs:
