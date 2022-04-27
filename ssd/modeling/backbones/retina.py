@@ -14,7 +14,7 @@ class RetinaNet(torch.nn.Module):
     """
 
     def __init__(self,
-                 output_channels: List[int],
+                 output_channels: int,
                  image_channels: int,
                  output_feature_sizes: List[Tuple[int]]):
         super().__init__()
@@ -29,7 +29,7 @@ class RetinaNet(torch.nn.Module):
         # initialize fpn
         self.fpn = torchvision.ops.FeaturePyramidNetwork(
             in_channels_list=[64, 128, 256, 512, 512, 256], 
-            out_channels=256)
+            out_channels=output_channels)
 
         # Focal Loss footnotes
         # P6 = 3×3 stride-2 conv on C5
@@ -73,6 +73,7 @@ class RetinaNet(torch.nn.Module):
             out_channels=256,
             kernel_size=1
         )
+
 
     def forward(self, x):
         """
