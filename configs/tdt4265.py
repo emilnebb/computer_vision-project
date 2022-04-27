@@ -29,7 +29,7 @@ model.num_classes = 8 + 1  # Add 1 for background class
 # )
 
 backbone = L(backbones.RetinaNet)(
-    output_channels=256,
+    output_channels=[256] * 6,
     image_channels="${train.image_channels}",
     output_feature_sizes="${anchors.feature_sizes}"
 )
