@@ -9,6 +9,8 @@ from ssd.data.transforms import (
     GroundTruthBoxesToAnchors)
 from .ssd300 import train, optimizer, schedulers, model, data_train, data_val, loss_objective
 from .utils import get_dataset_dir
+from ssd.modeling.retinanet import RetinaNet
+
 
 ##############################################################
 # configuration for using SSD on the TDT4265 project dataset #
@@ -30,6 +32,15 @@ backbone = L(backbones.RetinaNet)(
     output_channels=[256] * 6,
     image_channels="${train.image_channels}",
     output_feature_sizes="${anchors.feature_sizes}"
+)
+
+model = L(RetinaNet)(
+    feature_extractor="${backbone}",
+    anchors="${anchors}",
+    loss_objective="${loss_objective}",
+    num_classes=8 + 1,  # Add 1 for background
+    anchor_prob_initialization=True,
+    anchor_background_prob=0.99 #p in formula
 )
 
 # loss_objective = L(FocalLoss)(anchors="${anchors}",
