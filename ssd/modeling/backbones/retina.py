@@ -116,18 +116,18 @@ class RetinaNet(torch.nn.Module):
 
         # # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
-        #out_features = self.fpn(x_fpn).values()
+        out_features = self.fpn(x_fpn).values()
         # print(f"shapes of fpn outputs={list(out_features)}")
 
         # compose this list when we want to skip FPN
-        out_features = [
-            self.transform_64_to_256_channels(stage_1),
-            self.transform_128_to_256_channels(stage_2),
-            stage_3,
-            self.transform_512_to_256_channels(stage_4),
-            self.transform_512_to_256_channels(downsample_1),
-            downsample_2
-        ]
+        # out_features = [
+        #     self.transform_64_to_256_channels(stage_1),
+        #     self.transform_128_to_256_channels(stage_2),
+        #     stage_3,
+        #     self.transform_512_to_256_channels(stage_4),
+        #     self.transform_512_to_256_channels(downsample_1),
+        #     downsample_2
+        # ]
 
         # expected out DIMs:
         # IDX=0 Expected shape: (256, 32, 256)
