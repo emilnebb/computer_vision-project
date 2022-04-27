@@ -42,7 +42,7 @@ class RetinaNet(torch.nn.Module):
                 stride=2,
                 padding=1
             ),
-            nn.BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.BatchNorm2d(512),
         )
 
         # P7 is computed by applying ReLU followed by a 3×3 stride-2 conv on P6
@@ -55,7 +55,7 @@ class RetinaNet(torch.nn.Module):
                 stride=2,
                 padding=1 # not sure if this should be..
             ),
-            nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.BatchNorm2d(256),
         )
 
         self.transform_64_to_256_channels = nn.Conv2d(
