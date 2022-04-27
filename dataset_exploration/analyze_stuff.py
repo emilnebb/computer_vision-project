@@ -25,6 +25,13 @@ def analyze_something(dataloader, cfg):
     for batch in tqdm(dataloader):
         # Remove the two lines below and start analyzing :D
         print("The keys in the batch are:", batch.keys())
+
+        print(f"image.shape={batch['image'].shape}")
+        print(f"boxes={batch['boxes']}")
+        print(f"labels={batch['labels']}")
+        print(f"width={batch['width']}")
+        print(f"height={batch['height']}")
+
         exit()
 
 
