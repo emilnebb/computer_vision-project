@@ -72,7 +72,6 @@ class RetinaNet(torch.nn.Module):
                 padding=1),
             nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU()
-        ),
         )
 
         self.transform_64_to_256_channels = nn.Conv2d(
