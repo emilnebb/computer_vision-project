@@ -33,12 +33,15 @@ class RetinaNet(torch.nn.Module):
 
         # Focal Loss footnotes
         # P6 = 3×3 stride-2 conv on C5
-        self.transform_c5_to_p6 = nn.Conv2d(
-            in_channels=512,
-            out_channels=512,
-            kernel_size=3,
-            stride=2,
-            padding=1
+        self.transform_c5_to_p6 = nn.Sequential(
+            nn.ReLU(),
+            nn.Conv2d(
+                in_channels=512,
+                out_channels=512,
+                kernel_size=3,
+                stride=2,
+                padding=1
+            ),
         )
 
         # P7 is computed by applying ReLU followed by a 3×3 stride-2 conv on P6
