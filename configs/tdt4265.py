@@ -20,15 +20,21 @@ train.imshape = (128, 1024)
 train.image_channels = 3
 model.num_classes = 8 + 1  # Add 1 for background class
 
-backbone = L(backbones.BasicModel)(
-    output_channels=[128, 256, 128, 128, 64, 64],
+# backbone = L(backbones.BasicModel)(
+#     output_channels=[128, 256, 128, 128, 64, 64],
+#     image_channels="${train.image_channels}",
+#     output_feature_sizes="${anchors.feature_sizes}"
+# )
+
+backbone = L(backbones.RetinaNet)(
+    output_channels=[256] * 6,
     image_channels="${train.image_channels}",
     output_feature_sizes="${anchors.feature_sizes}"
 )
 
-loss_objective = L(FocalLoss)(anchors="${anchors}",
-                              alpha=[0.01, *[1 for i in range(model.num_classes-1)]],
-                              gamma=2)
+# loss_objective = L(FocalLoss)(anchors="${anchors}",
+#                               alpha=[0.01, *[1 for i in range(model.num_classes-1)]],
+#                               gamma=2)
 
 anchors = L(AnchorBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
