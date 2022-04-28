@@ -39,9 +39,9 @@ class FocalLoss(nn.Module):
         return: float
         """
         y_k = torch.transpose(F.one_hot(y_k, self.alpha.shape[1]), 1, 2)
-        loss = self.alpha*(1-p_k)**self.gamma*y_k*torch.log(p_k)
+        focal_loss = self.alpha*(1-p_k)**self.gamma*y_k*torch.log(p_k)
 
-        return torch.sum(loss)
+        return focal_loss.sum(dim=1).mean()
     
     def forward(self,
             bbox_delta: torch.FloatTensor, confs: torch.FloatTensor,
@@ -68,12 +68,12 @@ class FocalLoss(nn.Module):
         gt_locations = gt_locations[pos_mask]
         regression_loss = F.smooth_l1_loss(bbox_delta, gt_locations, reduction="sum")
         num_pos = gt_locations.shape[0]/4
-        total_loss = regression_loss/num_pos + classification_loss/(batch_size+num_anchors)
+        total_loss = regression_loss/num_pos + classification_loss
         to_log = dict(
             regression_loss=regression_loss/num_pos,
-            classification_loss=classification_loss/num_pos,
+            classification_loss=classification_loss,
             total_loss=total_loss
         )
-        print(f"Classification loss= {classification_loss/(batch_size+num_anchors)}")
+        print(f"Classification loss= {classification_loss}")
         print(f"Total loss= {total_loss}")
         return total_loss, to_log
