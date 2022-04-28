@@ -27,7 +27,7 @@ class RetinaNet(nn.Module):
         self.classification_heads = []
         self.anchor_prob_initialization = anchor_prob_initialization
         self.p = anchor_background_prob
-
+        print(f"Number of boxes {anchors.num_boxes_per_fmap}")
         # Initialize output heads that are applied to each feature map from the backbone.
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             # in task 2.3 we will replace these heads with deeper convolutional nets
@@ -78,25 +78,28 @@ class RetinaNet(nn.Module):
         """
         initializes weights of the heads
         """
+        pi=0.01
         #Improved weight initialization
         if self.anchor_prob_initialization:
             layers = [*self.regression_heads]
             for layer in layers:
-                for param in layer.parameters():
-                    if param.dim() > 1: nn.init.xavier_uniform_(param)
+                for conv in layer:
+                    nn.init.normal_(conv.weight, mean=0, std= 0.01)
+                    nn.init.constant_(conv.bias, 0)
 
             layers = [*self.classification_heads]
             for layer in layers:
-                for param in layer.parameters():
-                    if param.dim() > 1: nn.init.xavier_uniform_(param)
-                # Initialize biases of the last convolutional layers
-                #print(f"Last layer = {layer[-1]}")
-                nn.init.constant_(layer[-1].bias, 0)
-                numbers_to_change = int(list(layer[-1].bias.shape)[0]/self.num_classes)
-                #print(f"Numbers to change = {numbers_to_change}")
-                nn.init.constant_(layer[-1].bias[:numbers_to_change], math.log(self.p*(self.num_classes-1)/(1-self.p)))
-                #print(f"Bias shape = {layer[-1].bias.shape}")
-                #print(f"Bias = {layer[-1].bias}")
+                for conv in layer:
+                    nn.init.normal_(conv.weight, mean=0, std= 0.01)
+                    # Initialize biases of the last convolutional layers
+                    nn.init.constant_(conv.bias, 0)
+            
+            last_layer = layers[-1]
+            numbers_to_change = int(list(last_layer[-1].bias.shape)[0]/self.num_classes)
+            #print(f"Numbers to change = {numbers_to_change}")
+            nn.init.constant_(last_layer[-1].bias[:4], math.log((1-pi)/pi))
+            print(f"Bias shape = {last_layer[-1].bias.shape}")
+            print(f"Bias = {last_layer[-1].bias}")
 
         #Regular weight initialization
         else:
