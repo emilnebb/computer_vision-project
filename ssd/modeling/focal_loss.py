@@ -53,13 +53,14 @@ class FocalLoss(nn.Module):
             gt_bbox: [batch_size, num_anchors, 4]
             gt_label = [batch_size, num_anchors]
         """
+        batch_size = gt_labels.shape[0]
+        num_anchors = gt_labels.shape[1]
+
         gt_bbox = gt_bbox.transpose(1, 2).contiguous() # reshape to [batch_size, 4, num_anchors]
         with torch.no_grad():
             #Remember to apply softmax (or log_softmax) to confs:
             to_log = - F.log_softmax(confs, dim=1)
             classification_loss = self.focal_loss(to_log, gt_labels)
-        #classification_loss = torch.sum(mask)
-
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
         bbox_delta = bbox_delta[pos_mask]
@@ -67,11 +68,12 @@ class FocalLoss(nn.Module):
         gt_locations = gt_locations[pos_mask]
         regression_loss = F.smooth_l1_loss(bbox_delta, gt_locations, reduction="sum")
         num_pos = gt_locations.shape[0]/4
-        total_loss = regression_loss/num_pos + classification_loss/num_pos
+        total_loss = regression_loss/num_pos + classification_loss/(batch_size+num_anchors)
         to_log = dict(
             regression_loss=regression_loss/num_pos,
             classification_loss=classification_loss/num_pos,
             total_loss=total_loss
         )
+        print(f"Classification loss= {classification_loss/(batch_size+num_anchors)}")
         print(f"Total loss= {total_loss}")
         return total_loss, to_log
