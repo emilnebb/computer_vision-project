@@ -51,6 +51,7 @@ def analyze_something(dataloader, cfg):
             'scooter': 0,
             'person': 0,
             'rider': 0,
+            'sum': 0
         }
 
         # Remove the two lines below and start analyzing :D
@@ -80,6 +81,7 @@ def analyze_something(dataloader, cfg):
 
 
             rel_bb_size[label] += rel_width * rel_height
+            rel_bb_size['sum'] += rel_width * rel_height
             
             # we use scalar as aspect ratio (height/width)
             aspect_ratios.append(rel_height / rel_width)
