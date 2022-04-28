@@ -24,11 +24,24 @@ def get_dataloader(cfg, dataset_to_visualize):
 
 def analyze_something(dataloader, cfg):
 
-    dataset_stats = []
+    rel_bb_sizes = []
+    aspect_ratios = []
 
-    for batch in tqdm(dataloader):
+    total_class_occurrences = {
+        'background': 0,
+        'car': 0,
+        'truck': 0,
+        'bus': 0,
+        'motorcycle': 0,
+        'bicycle': 0,
+        'scooter': 0,
+        'person': 0,
+        'rider': 0,
+    }
 
-        stats = {
+    for i, batch in tqdm(enumerate(dataloader)):
+
+        rel_bb_size = {
             'background': 0,
             'car': 0,
             'truck': 0,
@@ -50,21 +63,38 @@ def analyze_something(dataloader, cfg):
         # print(f"height={batch['height']}")
 
         for idx, label in enumerate(batch['labels'].flatten()):
-            # as coordinates are given relatively to dimensions this
-            # calculates the relative size of bb compared to entire image
-            bb = batch['boxes'][0][idx]
-            size = (bb[2].item() - bb[0].item()) * (bb[3].item() - bb[1].item())
-            
+
             # translate label index into label string
             label = cfg.label_map[label.item()]
+
+            total_class_occurrences[label] += 1
+
+            rel_x1, rel_x2 = batch['boxes'][0][idx][0].item(), batch['boxes'][0][idx][2].item()
+            rel_y1, rel_y2 = batch['boxes'][0][idx][1].item(), batch['boxes'][0][idx][3].item()
             
-            # append size to our stats dict
-            stats[label] += size
+            # as coordinates are given relatively to dimensions this
+            # calculates the relative size of bb compared to entire image
+            rel_width = rel_x2 - rel_x1
+            rel_height = rel_y2 - rel_y1
 
-        dataset_stats.append(stats)
 
-    with open('dataset_stats.json', 'w') as f:
-        json.dump(dataset_stats, f)
+
+            rel_bb_size[label] += rel_width * rel_height
+            
+            # we use scalar as aspect ratio (height/width)
+            aspect_ratios.append(rel_height / rel_width)
+
+        rel_bb_sizes.append(rel_bb_size)
+
+    with open('dataset_exploration/total_class_occurrences.json', 'w') as f:
+        json.dump(total_class_occurrences, f)
+    
+
+    with open('dataset_exploration/bb_sizes.json', 'w') as f:
+        json.dump(rel_bb_sizes, f)
+        
+    with open('dataset_exploration/aspect_ratios.json', 'w') as f:
+        json.dump(aspect_ratios, f)
     
 
 def main():
