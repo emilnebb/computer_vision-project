@@ -27,26 +27,43 @@ class RetinaNet(nn.Module):
         self.classification_heads = []
         self.anchor_prob_initialization = anchor_prob_initialization
         self.p = anchor_background_prob
-
+        
+        print(f"Number of boxes {anchors.num_boxes_per_fmap}")
         # Initialize output heads that are applied to each feature map from the backbone.
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             # in task 2.3 we will replace these heads with deeper convolutional nets
             self.regression_heads.append(nn.Sequential(
                 nn.Conv2d(
                     in_channels=out_ch,
-                    out_channels=out_ch,  # is 4 the coordinates?!
+                    out_channels=out_ch,
                     kernel_size=3,
                     padding=1
                 ),
+                nn.ReLU(),
                 nn.Conv2d(
                     in_channels=out_ch,
-                    out_channels=out_ch,  # is 4 the coordinates?!
+                    out_channels=out_ch,
                     kernel_size=3,
                     padding=1
                 ),
+                nn.ReLU(),
                 nn.Conv2d(
                     in_channels=out_ch,
-                    out_channels=n_boxes * 4,  # is 4 the coordinates?!
+                    out_channels=out_ch,
+                    kernel_size=3,
+                    padding=1
+                ),
+                nn.ReLU(),
+                nn.Conv2d(
+                    in_channels=out_ch,
+                    out_channels=out_ch,
+                    kernel_size=3,
+                    padding=1
+                ),
+                nn.ReLU(),
+                nn.Conv2d(
+                    in_channels=out_ch,
+                    out_channels=n_boxes * 4,
                     kernel_size=3,
                     padding=1
                 )
@@ -57,11 +74,25 @@ class RetinaNet(nn.Module):
                     kernel_size=3,
                     padding=1
                 ),
+                nn.ReLU(),
                 nn.Conv2d(
                     in_channels=out_ch, out_channels=out_ch,
                     kernel_size=3,
                     padding=1
                 ),
+                nn.ReLU(),
+                nn.Conv2d(
+                    in_channels=out_ch, out_channels=out_ch,
+                    kernel_size=3,
+                    padding=1
+                ),
+                nn.ReLU(),
+                nn.Conv2d(
+                    in_channels=out_ch, out_channels=out_ch,
+                    kernel_size=3,
+                    padding=1
+                ),
+                nn.ReLU(),
                 nn.Conv2d(
                     in_channels=out_ch, out_channels=n_boxes * self.num_classes,
                     kernel_size=3,
@@ -78,25 +109,31 @@ class RetinaNet(nn.Module):
         """
         initializes weights of the heads
         """
+        p=0.99
         #Improved weight initialization
         if self.anchor_prob_initialization:
             layers = [*self.regression_heads]
-            for layer in layers:
-                for param in layer.parameters():
-                    if param.dim() > 1: nn.init.xavier_uniform_(param)
+            for sequential in layers:
+                for layer in sequential:
+                    if hasattr(layer, "weight"):
+                        nn.init.normal_(layer.weight, mean=0, std= 0.01)
+                    if hasattr(layer, "bias"):
+                        nn.init.constant_(layer.bias, 0)
 
             layers = [*self.classification_heads]
-            for layer in layers:
-                for param in layer.parameters():
-                    if param.dim() > 1: nn.init.xavier_uniform_(param)
-                # Initialize biases of the last convolutional layers
-                #print(f"Last layer = {layer[-1]}")
-                nn.init.constant_(layer[-1].bias, 0)
-                numbers_to_change = int(list(layer[-1].bias.shape)[0]/self.num_classes)
+            for sequential in layers:
+                for layer in sequential:
+                    if hasattr(layer, "weight"):
+                        nn.init.normal_(layer.weight, mean=0, std= 0.01)
+                    if hasattr(layer, "bias"):
+                        nn.init.constant_(layer.bias, 0)
+            
+                last_layer = sequential[-1]
+                n_boxes = int(list(last_layer.bias.shape)[0]/self.num_classes)
                 #print(f"Numbers to change = {numbers_to_change}")
-                nn.init.constant_(layer[-1].bias[:numbers_to_change], math.log(self.p*(self.num_classes-1)/(1-self.p)))
-                #print(f"Bias shape = {layer[-1].bias.shape}")
-                #print(f"Bias = {layer[-1].bias}")
+                nn.init.constant_(last_layer.bias[:n_boxes], math.log(p*(8)/0.01))
+                print(f"Bias shape = {last_layer.bias.shape}")
+                print(f"Bias shape = {last_layer.bias}")
 
         #Regular weight initialization
         else:

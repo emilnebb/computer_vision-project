@@ -34,18 +34,16 @@ backbone = L(backbones.RetinaNet)(
     output_feature_sizes="${anchors.feature_sizes}"
 )
 
-# model = L(RetinaNet)(
-#     feature_extractor="${backbone}",
-#     anchors="${anchors}",
-#     loss_objective="${loss_objective}",
-#     num_classes=8 + 1,  # Add 1 for background
-#     anchor_prob_initialization=True,
-#     anchor_background_prob=0.99 #p in formula
-# )
+model = L(RetinaNet)(
+     feature_extractor="${backbone}",
+     anchors="${anchors}",
+     loss_objective="${loss_objective}",
+     num_classes=8 + 1,  # Add 1 for background
+     anchor_prob_initialization=False,
+     anchor_background_prob=0.99 #p in formula
+)
 
-# loss_objective = L(FocalLoss)(anchors="${anchors}",
-#                               alpha=[0.01, *[1 for i in range(model.num_classes-1)]],
-#                               gamma=2)
+loss_objective = L(FocalLoss)(anchors="${anchors}", alpha=[10, *[1000 for i in range(model.num_classes-1)]], gamma=2)
 
 anchors = L(AnchorBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
