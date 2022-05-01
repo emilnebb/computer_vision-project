@@ -41,7 +41,7 @@ class FocalLoss(nn.Module):
         y_k = torch.transpose(F.one_hot(y_k, self.alpha.shape[1]), 1, 2)
         focal_loss = self.alpha*(1-p_k)**self.gamma*y_k*torch.log(p_k)
 
-        return focal_loss.sum(dim=1).mean()
+        return - focal_loss.sum(dim=1).mean()
     
     def forward(self,
             bbox_delta: torch.FloatTensor, confs: torch.FloatTensor,
@@ -57,10 +57,10 @@ class FocalLoss(nn.Module):
         num_anchors = gt_labels.shape[1]
 
         gt_bbox = gt_bbox.transpose(1, 2).contiguous() # reshape to [batch_size, 4, num_anchors]
-        with torch.no_grad():
-            #Remember to apply softmax (or log_softmax) to confs:
-            to_log = - F.log_softmax(confs, dim=1)
-            classification_loss = self.focal_loss(to_log, gt_labels)
+        #with torch.no_grad():
+        #Remember to apply softmax (or log_softmax) to confs:
+        to_log = F.softmax(confs, dim=1)
+        classification_loss = self.focal_loss(to_log, gt_labels)
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
         bbox_delta = bbox_delta[pos_mask]
