@@ -24,10 +24,10 @@ if __name__ == '__main__':
     step = load_step(path="data/run-task_2.1_basic_model-tag-loss_total_loss.csv")
     basic = load_loss(path="data/run-task_2.1_basic_model-tag-loss_total_loss.csv")
     augmentation = load_loss(path="data/run-task_2.2_augmentation-tag-loss_total_loss.csv")
+    retina = load_loss(path="data/run-task_2.3.1_retinanet-tag-loss_total_loss.csv")
+    deeper_heads = load_loss(path="data/run-task_2.3.3_deeper_heads-tag-loss_total_loss.csv")
 
     """
-    retina = load_loss(path=" ")
-    deeper_heads = load_loss(path= " ")
     weight_init = load_loss(path=" ")
     focal_loss = load_loss(path=" ")
     """
@@ -35,10 +35,10 @@ if __name__ == '__main__':
 
     plt.plot(step, basic, label='Basic model')
     plt.plot(step, augmentation, label='Data augmentation')
-
-    """
     plt.plot(step, retina, label='FPN on ResNet')
     plt.plot(step, deeper_heads, label='Deeper convolutional heads')
+
+    """
     plt.plot(step, weight_init, label='Improved weight and bias initialization')
     plt.plot(step, focal_loss, label='Focal loss')
     """
