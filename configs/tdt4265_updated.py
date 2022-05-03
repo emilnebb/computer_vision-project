@@ -4,6 +4,7 @@ from .tdt4265 import (
     optimizer,
     schedulers,
     loss_objective,
+    anchors,
     model,
     backbone,
     data_train,
