@@ -74,6 +74,4 @@ class FocalLoss(nn.Module):
             classification_loss=classification_loss,
             total_loss=total_loss
         )
-        print(f"Classification loss= {classification_loss}")
-        print(f"Total loss= {total_loss}")
         return total_loss, to_log
