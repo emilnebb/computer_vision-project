@@ -7,7 +7,7 @@
 *.mp4
 *.ckpt
 *.patch
-
+*.avi
 # Directories
 .cache/
 # logs/
