@@ -1,6 +1,7 @@
 from tops.config import instantiate, LazyConfig
 from ssd import utils
 from tqdm import tqdm
+import json
 
 
 def get_config(config_path):
@@ -22,11 +23,6 @@ def get_dataloader(cfg, dataset_to_visualize):
 
 
 def analyze_something(dataloader, cfg):
-<<<<<<< Updated upstream
-    for batch in tqdm(dataloader):
-        # Remove the two lines below and start analyzing :D
-        print("The keys in the batch are:", batch.keys())
-=======
 
     rel_bb_sizes = []
     aspect_ratios = []
@@ -101,24 +97,21 @@ def analyze_something(dataloader, cfg):
             # we use scalar as aspect ratio (height/width)
             # because most of the bb boxes have greater hight than width
             aspect_ratios.append(rel_height / rel_width)
->>>>>>> Stashed changes
 
-        print(f"image.shape={batch['image'].shape}")
-        print(f"boxes={batch['boxes']}")
-        print(f"labels={batch['labels']}")
-        print(f"width={batch['width']}")
-        print(f"height={batch['height']}")
+        rel_bb_sizes.append(rel_bb_size)
 
-<<<<<<< Updated upstream
-        exit()
-=======
     with open('dataset_exploration/bb_dimensions.json', 'w') as f:
         json.dump(bb_dimensions, f)
         
     with open('dataset_exploration/total_class_counters.json', 'w') as f:
         json.dump(total_class_counters, f)
->>>>>>> Stashed changes
 
+    with open('dataset_exploration/bb_sizes.json', 'w') as f:
+        json.dump(rel_bb_sizes, f)
+        
+    with open('dataset_exploration/aspect_ratios.json', 'w') as f:
+        json.dump(aspect_ratios, f)
+    
 
 def main():
     config_path = "configs/tdt4265.py"
