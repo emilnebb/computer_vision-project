@@ -30,3 +30,10 @@ anchors = L(AnchorBoxes)(
     scale_center_variance=0.1,
     scale_size_variance=0.2
 )
+
+#(w, h)
+# 1: 2.5, 12.5
+# 2: 7.5, 17.5
+# 3: 7.5, 12.5
+# 4: 7.5, 22.5
+# 5: 14, 14
