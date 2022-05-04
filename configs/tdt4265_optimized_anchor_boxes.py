@@ -25,15 +25,15 @@ anchors = L(AnchorBoxes)(
     # aspect ratio is used to define two boxes per element in the list.
     # if ratio=[2], boxes will be created with ratio 1:2 and 2:1
     # Number of boxes per location is in total 2 + 2 per aspect ratio
-    aspect_ratios=[[2, 3], [2, 3], [2, 3], [2, 3], [2], [2]],
+    aspect_ratios=[[2, 3, 5, 11], [2, 3, 5, 11], [2, 3, 5, 11], [2, 3, 5, 11], [2, 3, 5, 11], [2, 3, 5, 11]],
     image_shape="${train.imshape}",
     scale_center_variance=0.1,
     scale_size_variance=0.2
 )
 
 #(w, h)
-# 1: 2.5, 12.5
-# 2: 7.5, 17.5
-# 3: 7.5, 12.5
-# 4: 7.5, 22.5
-# 5: 14, 14
+# 1: 2.5, 12.5 -> 5
+# 2: 7.5, 17.5 -> 2.3 ~ 11/5
+# 3: 7.5, 12.5 -> 1.6 ~ 5/3
+# 4: 7.5, 22.5 -> 3
+# 5: 14, 14 -> 1
