@@ -11,8 +11,10 @@ from .tdt4265 import (
     train_cpu_transform,
     val_cpu_transform,
     gpu_transform,
-    label_map
+    label_map,
+    AnchorBoxes
 )
+from tops.config import LazyCall as L
 
 anchors = L(AnchorBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
