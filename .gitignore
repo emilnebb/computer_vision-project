@@ -5,6 +5,7 @@
 *.m4a
 *.mkv
 *.mp4
+*.mov
 *.ckpt
 *.patch
 
