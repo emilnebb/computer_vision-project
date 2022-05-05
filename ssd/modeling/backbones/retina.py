@@ -76,6 +76,9 @@ class RetinaNet(torch.nn.Module):
             kernel_size=1
         )
 
+    # hook for the gradients of the activations
+    def activations_hook(self, grad):
+        self.gradients = grad
 
     def forward(self, x):
         """
@@ -123,6 +126,8 @@ class RetinaNet(torch.nn.Module):
         # # print(f"shapes of x_fpn={[(k, v.shape) for k, v in x_fpn.items()]}")
 
         out_features = self.fpn(x_fpn).values()
+
+        h = x.register_hook(self.activations_hook)
         # print(f"shapes of fpn outputs={list(out_features)}")
 
         # compose this list when we want to skip FPN
@@ -152,4 +157,12 @@ class RetinaNet(torch.nn.Module):
         assert len(out_features) == len(self.output_feature_shape),\
             f"Expected that the length of the outputted features to be: {len(self.output_feature_shape)}, but it was: {len(out_features)}"
         return tuple(out_features)
+
+    # method for the gradient extraction
+    def get_activations_gradient(self):
+        return self.gradients
+
+    # method for the activation exctraction
+    def get_activations(self, x):
+        return self.features_conv(x)
 
