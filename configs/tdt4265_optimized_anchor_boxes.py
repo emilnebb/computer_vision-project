@@ -1,5 +1,5 @@
 # Import everything from the old dataset and only change the dataset folder.
-from .tdt4265 import (
+from .tdt4265_updated import (
     train,
     optimizer,
     schedulers,
