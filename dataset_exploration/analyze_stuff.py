@@ -25,8 +25,6 @@ def get_dataloader(cfg, dataset_to_visualize):
 def analyze_something(dataloader, cfg):
 
     rel_bb_sizes = []
-    aspect_ratios = []
-
     bb_dimensions = []
 
     # counting # occurrences and sum of bb sizes
@@ -94,9 +92,7 @@ def analyze_something(dataloader, cfg):
             rel_bb_size[label] += rel_width * rel_height
             rel_bb_size['sum'] += rel_width * rel_height
             
-            aspect_ratios.append((rel_width, rel_height))
-
-        rel_bb_sizes.append(rel_bb_size)
+            rel_bb_sizes.append(rel_bb_size)
 
     with open('dataset_exploration/bb_dimensions.json', 'w') as f:
         json.dump(bb_dimensions, f)
@@ -107,8 +103,6 @@ def analyze_something(dataloader, cfg):
     with open('dataset_exploration/bb_sizes.json', 'w') as f:
         json.dump(rel_bb_sizes, f)
         
-    with open('dataset_exploration/aspect_ratios.json', 'w') as f:
-        json.dump(aspect_ratios, f)
     
 
 def main():
