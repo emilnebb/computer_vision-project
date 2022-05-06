@@ -94,9 +94,7 @@ def analyze_something(dataloader, cfg):
             rel_bb_size[label] += rel_width * rel_height
             rel_bb_size['sum'] += rel_width * rel_height
             
-            # we use scalar as aspect ratio (height/width)
-            # because most of the bb boxes have greater hight than width
-            aspect_ratios.append(rel_height / rel_width)
+            aspect_ratios.append((rel_width, rel_height))
 
         rel_bb_sizes.append(rel_bb_size)
 
