@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=10 # just set GPU:10 visible; torch can't handle more than 16 GPUs by default
+export CUDA_VISIBLE_DEVICES=4 # just set GPU:10 visible; torch can't handle more than 16 GPUs by default
 
 python trainer.py \
 --config-file config.yaml \

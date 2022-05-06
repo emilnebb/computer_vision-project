@@ -3,3 +3,6 @@ _BASE_: "configs/COCO-Detection/retinanet_R_50_FPN_1x.yaml"
 DATASETS:
   TRAIN: ("tdt4265_train",)
   TEST: ("tdt4265_val",)
+SOLVER:
+  CHECKPOINT_PERIOD: 500
+  MAX_ITER: 1000
