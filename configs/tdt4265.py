@@ -61,9 +61,9 @@ anchors = L(AnchorBoxes)(
 )
 
 train_cpu_transform = L(torchvision.transforms.Compose)(transforms=[
-    #L(RandomSampleCrop)(),
+    L(RandomSampleCrop)(),
     L(ToTensor)(),
-    #L(RandomHorizontalFlip)(),
+    L(RandomHorizontalFlip)(),
     L(Resize)(imshape="${train.imshape}"),
     L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
 ])
