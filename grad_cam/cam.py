@@ -23,6 +23,7 @@ warnings.simplefilter('ignore')
 from torchvision.models.segmentation import deeplabv3_resnet50
 import torch
 import torch.nn.functional as F
+from torch.autograd import Variable
 import requests
 from PIL import Image
 from pytorch_grad_cam import GradCAM
@@ -46,21 +47,21 @@ class RetinaNetModelOutputWrapper(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
+
     def forward(self, x):
         dict_from_outputs = OrderedDict()
         b, l, s = self.model(x)[0]
-        dict_from_outputs["boxes"] = b
+        dict_from_outputs["boxes"] = Variable(b, requires_grad=True)
         dict_from_outputs["labels"] = l
-        dict_from_outputs["scores"] = s
-        return dict_from_outputs
+        dict_from_outputs["scores"] = Variable(s, requires_grad=True)
+        return [dict_from_outputs]
 
 
 def fasterrcnn_reshape_transform(x):
-    print(f"x type = {type(x)}")
-    print(f"x shape = {x.shape[1]}")
-    target_size = x.shape[-2 : ]
+    target_size = x[3].shape[-2 : ]
+    #print(f"Target size {target_size}")
     activations = []
-    for key, value in x.items():
+    for value in x:
         activations.append(torch.nn.functional.interpolate(torch.abs(value), target_size, mode='bilinear'))
     activations = torch.cat(activations, axis=1)
     return activations
@@ -81,7 +82,9 @@ def main(config_path, train, num_images, conf_threshold):
     cfg = get_config(config_path)
 
     #Collecting our model, comes in eval mode
-    model = get_trained_model(cfg).eval()
+    model = get_trained_model(cfg)
+
+    torch.set_grad_enabled(True)
 
     if train:
         dataset_to_visualize = "train"
@@ -90,25 +93,27 @@ def main(config_path, train, num_images, conf_threshold):
 
     dataloader = get_dataloader(cfg, dataset_to_visualize)
     img_tensor = next(iter(dataloader))['image'] #tensor
-    print(f"Image tensor shape {img_tensor.shape}")
+    #print(f"Image tensor shape {img_tensor.shape}")
 
-    #Show one image:
     img_numpy = img_tensor[0].numpy().transpose(1, 2, 0)
+    img_tensor = Variable(img_tensor, requires_grad=True)
     #plt.imshow(img_numpy)
     #plt.show()
     image_float_np = np.float32(img_numpy) / 255
 
     model1 = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     test_target_layers = [model1.backbone]
-    print(f"Length of test_target_layers {len(test_target_layers)}")
-    print(f"Test_target_layers = {test_target_layers}")
+    #print(model1)
+    #print(f"Test_target_layers = {test_target_layers}")
 
     boxes, labels, scores = model(img_tensor)[0]
+    boxes = Variable(boxes, requires_grad=True)
+
 
     wrapped_model = RetinaNetModelOutputWrapper(model)
+    wrapped_model.model.eval()
 
-    target_layers = [module for module in model.modules() if not isinstance(module, torch.nn.Sequential)]
-    #print(f"Length of target layers = {len(target_layers)}")
+    target_layers = [model.feature_extractor]
     targets = [FasterRCNNBoxScoreTarget(labels=labels, bounding_boxes=boxes)]
     cam = EigenCAM(wrapped_model,
                    target_layers,
