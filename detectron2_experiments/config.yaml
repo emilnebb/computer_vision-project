@@ -1,8 +1,12 @@
 # we inherit an existing config and just overwrite specific parameters
-_BASE_: "configs/COCO-Detection/retinanet_R_50_FPN_1x.yaml"
+_BASE_: "configs/COCO-Detection/retinanet_R_50_FPN_3x.yaml"
 DATASETS:
   TRAIN: ("tdt4265_train",)
   TEST: ("tdt4265_val",)
 SOLVER:
   CHECKPOINT_PERIOD: 1000
   MAX_ITER: 2000
+INPUT:
+  MIN_SIZE_TRAIN: (16, 32, 48, 64, 86, 128)
+# TEST:
+  # EVAL_PERIOD: 10
