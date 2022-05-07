@@ -132,8 +132,6 @@ class RetinaNet(nn.Module):
                 n_boxes = int(list(last_layer.bias.shape)[0]/self.num_classes)
                 #print(f"Numbers to change = {numbers_to_change}")
                 nn.init.constant_(last_layer.bias[:n_boxes], math.log(p*(8)/0.01))
-                print(f"Bias shape = {last_layer.bias.shape}")
-                print(f"Bias shape = {last_layer.bias}")
 
         #Regular weight initialization
         else:
