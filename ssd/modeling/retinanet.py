@@ -27,8 +27,7 @@ class RetinaNet(nn.Module):
         self.classification_heads = []
         self.anchor_prob_initialization = anchor_prob_initialization
         self.p = anchor_background_prob
-        
-        print(f"Number of boxes {anchors.num_boxes_per_fmap}")
+
         # Initialize output heads that are applied to each feature map from the backbone.
         for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             # in task 2.3 we will replace these heads with deeper convolutional nets
