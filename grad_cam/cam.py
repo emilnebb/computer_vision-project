@@ -51,9 +51,9 @@ class RetinaNetModelOutputWrapper(torch.nn.Module):
     def forward(self, x):
         dict_from_outputs = OrderedDict()
         b, l, s = self.model(x)[0]
-        dict_from_outputs["boxes"] = Variable(b, requires_grad=True)
+        dict_from_outputs["boxes"] = b
         dict_from_outputs["labels"] = l
-        dict_from_outputs["scores"] = Variable(s, requires_grad=True)
+        dict_from_outputs["scores"] = s
         return [dict_from_outputs]
 
 
@@ -96,22 +96,19 @@ def main(config_path, train, num_images, conf_threshold):
     #print(f"Image tensor shape {img_tensor.shape}")
 
     img_numpy = img_tensor[0].numpy().transpose(1, 2, 0)
-    img_tensor = Variable(img_tensor, requires_grad=True)
+    img_tensor = tops.to_cuda(Variable(img_tensor, requires_grad=True))
+    
     #plt.imshow(img_numpy)
     #plt.show()
     image_float_np = np.float32(img_numpy) / 255
 
-    model1 = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    test_target_layers = [model1.backbone]
-    #print(model1)
-    #print(f"Test_target_layers = {test_target_layers}")
-
     boxes, labels, scores = model(img_tensor)[0]
     boxes = Variable(boxes, requires_grad=True)
+    
 
 
     wrapped_model = RetinaNetModelOutputWrapper(model)
-    wrapped_model.model.eval()
+    #wrapped_model.model.eval()
 
     target_layers = [model.feature_extractor]
     targets = [FasterRCNNBoxScoreTarget(labels=labels, bounding_boxes=boxes)]
