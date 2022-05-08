@@ -66,6 +66,36 @@ def fasterrcnn_reshape_transform(x):
     activations = torch.cat(activations, axis=1)
     return activations
 
+def predict(input_tensor, model):
+    outputs = model(input_tensor)
+    pred_labels = outputs[0]['labels'].cpu().numpy()
+    pred_scores = outputs[0]['scores'].detach().cpu().numpy()
+    pred_bboxes = outputs[0]['boxes'].detach().cpu().numpy()
+
+    boxes, labels, indices = [], [], []
+    for index in range(len(pred_scores)):
+        boxes.append(pred_bboxes[index].astype(np.int32))
+        labels.append(pred_labels[index])
+        indices.append(index)
+    boxes = np.int32(boxes)
+    return boxes, labels, indices
+
+COLORS = np.random.uniform(0, 255, size=(9, 3))
+
+def draw_boxes(boxes, labels, image):
+    for i, box in enumerate(boxes):
+        color = COLORS[labels[i]]
+        cv2.rectangle(
+            image,
+            (int(box[0]), int(box[1])),
+            (int(box[2]), int(box[3])),
+            color, 2
+        )
+        cv2.putText(image, (int(box[0]), int(box[1] - 5)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2,
+                    lineType=cv2.LINE_AA)
+    return image
+
 def get_save_folder_name(cfg):
     return os.path.join(
         "performance_assessment",
@@ -84,8 +114,6 @@ def main(config_path, train, num_images, conf_threshold):
     #Collecting our model, comes in eval mode
     model = get_trained_model(cfg)
 
-    torch.set_grad_enabled(True)
-
     if train:
         dataset_to_visualize = "train"
     else:
@@ -102,13 +130,39 @@ def main(config_path, train, num_images, conf_threshold):
     #plt.show()
     image_float_np = np.float32(img_numpy) / 255
 
+    """
     boxes, labels, scores = model(img_tensor)[0]
+    print(f"Boxes type {type(boxes)}")
+    print(f"Labels type {type(labels)}")
+    print(f"Scores type {type(scores)}")
     boxes = Variable(boxes, requires_grad=True)
-    
+    """
 
 
     wrapped_model = RetinaNetModelOutputWrapper(model)
-    #wrapped_model.model.eval()
+    boxes, labels, indices = predict(img_tensor, wrapped_model)
+
+    """
+    image = np.array(PIL.Image.open("grad_cam/both.png"))
+    image_float_np = np.float32(image) / 255
+    # define the torchvision image transforms
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+    ])
+
+    input_tensor = transform(image)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    input_tensor = input_tensor.to(device)
+    # Add a batch dimension:
+    input_tensor = input_tensor.unsqueeze(0)
+
+    test_model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+    test_model.eval()
+    boxes, classes, labels, indices = predict(img_tensor, model, device, 0.9)
+    print(type(boxes))
+    
+    test_target_layers = [test_model.backbone]
+    """
 
     target_layers = [model.feature_extractor]
     targets = [FasterRCNNBoxScoreTarget(labels=labels, bounding_boxes=boxes)]
@@ -116,14 +170,15 @@ def main(config_path, train, num_images, conf_threshold):
                    target_layers,
                    use_cuda=torch.cuda.is_available(),
                    reshape_transform=fasterrcnn_reshape_transform)
+    cam.uses_gradients = False
 
     grayscale_cam = cam(img_tensor, targets=targets)
     # Take the first image in the batch:
     grayscale_cam = grayscale_cam[0, :]
     cam_image = show_cam_on_image(image_float_np, grayscale_cam, use_rgb=True)
     # And lets draw the boxes again:
-    #image_with_bounding_boxes = draw_boxes(boxes, labels, classes, cam_image)
-    Image.fromarray(cam_image)
+    image_with_bounding_boxes = draw_boxes(boxes, labels, cam_image)
+    Image.fromarray(image_with_bounding_boxes)
 
 
 
