@@ -28,7 +28,7 @@ def analyze_something(dataloader, cfg):
     bb_dimensions = []
 
     # counting # occurrences and sum of bb sizes
-    total_class_counters = {
+    class_distribution_count_size = {
         'background': (0, 0.),
         'car': (0, 0.),
         'truck': (0, 0.),
@@ -83,8 +83,8 @@ def analyze_something(dataloader, cfg):
 
             bb_dimensions.append((abs_width, abs_height, label))
 
-            current = total_class_counters[label]
-            total_class_counters[label] = (current[0] + 1, current[1] + rel_width * rel_height)
+            current = class_distribution_count_size[label]
+            class_distribution_count_size[label] = (current[0] + 1, current[1] + abs_width * abs_height)
 
             # abs_width = rel_width * batch['width']
 
@@ -97,8 +97,8 @@ def analyze_something(dataloader, cfg):
     with open('dataset_exploration/bb_dimensions.json', 'w') as f:
         json.dump(bb_dimensions, f)
         
-    with open('dataset_exploration/total_class_counters.json', 'w') as f:
-        json.dump(total_class_counters, f)
+    with open('dataset_exploration/class_distribution_count_size.json', 'w') as f:
+        json.dump(class_distribution_count_size, f)
 
     with open('dataset_exploration/bb_sizes.json', 'w') as f:
         json.dump(rel_bb_sizes, f)
