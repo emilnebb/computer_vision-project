@@ -20,6 +20,9 @@ from pytorch_grad_cam.utils.model_targets import FasterRCNNBoxScoreTarget
 from pytorch_grad_cam.utils.reshape_transforms import fasterrcnn_reshape_transform
 from pytorch_grad_cam.utils.image import show_cam_on_image
 
+#Command line to run this script:
+# python -m grad_cam.cam configs/tdt4265.py
+
 #Piazza thread for grad grad_cam:
 #https://piazza.com/class/kyipdksfp9q1dn?cid=420
 
