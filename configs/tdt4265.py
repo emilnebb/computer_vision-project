@@ -16,6 +16,7 @@ from ssd.modeling.retinanet import RetinaNet
 # configuration for using SSD on the TDT4265 project dataset #
 ##############################################################
 
+train.epochs = 100
 
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)
