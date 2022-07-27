@@ -1,6 +1,6 @@
 # TDT4265 -Computer Vision and Deep Learning
 
-This is the repository for the project in TDT4265 Computer Vision and Deep Learning. This repository was originally written by [Håkon Hukkelas](https://www.ntnu.edu/employees/hakon.hukkelas) with current additions by [Mamoona Birkhez Shami](https://www.ntnu.edu/employees/mamoona.b.shami).
+This is the repository for the project in TDT4265 Computer Vision and Deep Learning. The template of this repository was originally written by [Håkon Hukkelas](https://www.ntnu.edu/employees/hakon.hukkelas) with current additions by [Mamoona Birkhez Shami](https://www.ntnu.edu/employees/mamoona.b.shami).
 
 # SSD300
 
